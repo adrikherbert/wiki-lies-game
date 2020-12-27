@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 
 app.secret_key = "acomplexstring"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wikigame.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -14,17 +14,19 @@ db = SQLAlchemy(app)
 # IMPLEMENT HTML INHERITENCE
 
 
-class users(db.Model):
+class Users(db.Model):
     _id = db.Column("id", db.Integer, primary_key=True)
     nickname = db.Column(db.String(1000))
     roomname = db.Column(db.String(1000))
+    is_admin = db.Column(db.Boolean())
 
-    def __init__(self, nickname, roomname):
+    def __init__(self, nickname, roomname, is_admin):
         self.nickname = nickname
         self.roomname = roomname
+        self.is_admin = is_admin
 
 
-class rooms(db.Model):
+class Rooms(db.Model):
     _id = db.Column("id", db.Integer, primary_key=True)
     roomname = db.Column(db.String(1000))
     passcode = db.Column(db.String(1000))
@@ -48,7 +50,7 @@ def join():
         roomname = request.form["roomname"]
         passcode = request.form["passcode"]
 
-        found_room = rooms.query.filter_by(roomname=roomname).first()
+        found_room = Rooms.query.filter_by(roomname=roomname).first()
 
         session["nickname"] = nickname
         session["roomname"] = roomname
@@ -58,7 +60,10 @@ def join():
             found_room = None
 
         if (found_room != None):
-            return redirect(url_for("room"))
+            user = Users(nickname, roomname, False)
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for("room", rn=roomname))
         else:
             flash("Incorrect Passcode or Room could not be found!", "info")
             return render_template("join.html")
@@ -77,48 +82,57 @@ def create():
         session["roomname"] = roomname
         session["passcode"] = passcode
 
-        if (rooms.query.filter_by(roomname=roomname).first() != None):
+        if (Rooms.query.filter_by(roomname=roomname).first() != None):
             flash("Room name in use!", "info")
             return render_template("create.html")
         else:
-            room = rooms(roomname, passcode)
+            room = Rooms(roomname, passcode)
             db.session.add(room)
             db.session.commit()
-            return redirect(url_for("nickname"))
+            return redirect(url_for("nickname", rn=roomname))
     else:
         return render_template("create.html")
 
 
-@app.route("/room", methods=["POST", "GET"])
-def room():
-    return render_template("room.html")
+@app.route("/room/<rn>", methods=["POST", "GET"])
+def room(rn):
+        return render_template("room.html")
 
 
-@app.route("/nickname", methods=["POST", "GET"])
-def nickname():
+@app.route("/nickname/<rn>", methods=["POST", "GET"])
+def nickname(rn):
     if request.method == "POST":
         nickname = request.form["nickname"]
         session["nickname"] = nickname
-        return redirect(url_for("room"))
+
+        room = Rooms.query.filter_by(roomname=rn).first()
+
+        user = Users(nickname, rn, True)
+        db.session.add(user)
+        db.session.commit()
+
+        return redirect(url_for("room", rn=rn))
     else:
         return render_template("nickname.html")
     
 
 def clear_db():
-    usersin = users.query.all()
+    usersin = Users.query.all()
 
-    for u in usersin:
-        db.session.delete(u)
+    if (usersin != None):
+        for u in usersin:
+            db.session.delete(u)
 
-    roomsin = rooms.query.all()
+    roomsin = Rooms.query.all()
 
-    for r in roomsin:
-        db.session.delete(r)
+    if (roomsin != None):
+        for r in roomsin:
+            db.session.delete(r)
 
     db.session.commit()
 
 
 if __name__ == "__main__":
-    clear_db()
     db.create_all()
+    clear_db()
     app.run(debug=True)

@@ -6,8 +6,15 @@
         <title>WikiGame!</title>
     </head>
     <body>
-        <div class="position-absolute top-50 start-50 translate-middle">
-            <h1>{{session["roomname"]}}</h1>
+        <div class="position-absolute top-0 start-50 translate-middle">
+            <h1 style="margin-top: 150px; font-size: 72px">-{{session["roomname"]}}-</h1>
         </div>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for msg in messages %}
+                    <p style="color: #0d6efd">{{msg}}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
     </body>
 </html>
