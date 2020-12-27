@@ -1,5 +1,7 @@
 from flask import Flask, redirect, url_for, render_template, request, session, flash
 from flask_sqlalchemy import SQLAlchemy
+from threading import Thread
+from time import sleep
 
 app = Flask(__name__)
 
@@ -96,6 +98,12 @@ def create():
 
 @app.route("/room/<rn>", methods=["POST", "GET"])
 def room(rn):
+    waiting = True
+    userlist = Users.query.filter_by(roomname=rn).all()
+    for user in userlist:
+        flash(f"{user.nickname} just joined!", "message")
+
+    while waiting:
         return render_template("room.html")
 
 
@@ -114,7 +122,13 @@ def nickname(rn):
         return redirect(url_for("room", rn=rn))
     else:
         return render_template("nickname.html")
-    
+
+
+def thread(num):
+    for i in range(num):
+        print("running")
+        sleep(1)
+
 
 def clear_db():
     usersin = Users.query.all()
