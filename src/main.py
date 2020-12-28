@@ -72,15 +72,14 @@ def join():
 
         found_room = Rooms.query.filter_by(roomname=roomname).first()
 
-        session["nickname"] = nickname
-        session["roomname"] = roomname
-        session["passcode"] = passcode
-        session["is_admin"] = False
-
         if (found_room != None and found_room.passcode != passcode):
             found_room = None
 
         if (found_room != None):
+            session["nickname"] = nickname
+            session["roomname"] = roomname
+            session["passcode"] = passcode
+            session["is_admin"] = False
             user = Users(nickname, roomname, False)
             db.session.add(user)
             db.session.commit()
@@ -100,14 +99,13 @@ def create():
         roomname = request.form["roomname"]
         passcode = request.form["passcode"]
 
-        session["roomname"] = roomname
-        session["passcode"] = passcode
-        session["is_admin"] = True
-
         if (Rooms.query.filter_by(roomname=roomname).first() != None):
             flash("Room name in use!", "info")
             return render_template("create.html")
         else:
+            session["roomname"] = roomname
+            session["passcode"] = passcode
+            session["is_admin"] = True
             room = Rooms(roomname, passcode, False)
             db.session.add(room)
             db.session.commit()
@@ -168,6 +166,12 @@ def game(rn):
             if not user.activated:
                 all_activated = False
 
+    truth_wikis = Wiki.query.filter_by(truth=True).all()
+
+    for tw in truth_wikis:
+        tw.truth = False
+
+    db.session.commit()
 
     if session["is_admin"]:
             user_len = len(user_list)
@@ -222,14 +226,13 @@ def game(rn):
         title = "You are the Guesser!"
         description = "You are trying to find the person with the article title listed below! Interrogate your friends to find the Truther!"
         wiki_title = truther_article.title
-        wiki_sum = "Find the Truther!"
+        wiki_sum = ""
     else:
         wiki_target = Wiki.query.filter_by(_id=randint(1, 16907)).first()
         wiki_title = wiki_target.title
         wiki_sum = wiki_target.description
         title = "You are a Liar!"
         description = "Someone else has the true article! Pretend like you know what you're talking about. You may use this article to help with that!"
-
 
     return render_template("game.html", title=title, description=description, wiki_title=wiki_title, wiki_sum=wiki_sum)
 
