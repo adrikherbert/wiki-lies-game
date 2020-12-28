@@ -11,9 +11,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # TODO: 
-# IMPLEMENT ROOM USER RECOGNITION AND GAME FUNCTIONALITY
-# CLEAN UP DATABASE AND SESSION STORAGE
-# IMPLEMENT HTML INHERITENCE
+# IMPLEMENT GAMEPLAY:
+#### SET ROUNDS, CHOOSE PLAYER TURNS, SHOW ARTICLE INFORMATION
 
 
 class Users(db.Model):
@@ -21,21 +20,35 @@ class Users(db.Model):
     nickname = db.Column(db.String(1000))
     roomname = db.Column(db.String(1000))
     is_admin = db.Column(db.Boolean())
+    activated = db.Column(db.Boolean())
 
     def __init__(self, nickname, roomname, is_admin):
         self.nickname = nickname
         self.roomname = roomname
         self.is_admin = is_admin
+        self.activated = False
 
 
 class Rooms(db.Model):
     _id = db.Column("id", db.Integer, primary_key=True)
     roomname = db.Column(db.String(1000))
     passcode = db.Column(db.String(1000))
+    activated = db.Column(db.Boolean())
 
-    def __init__(self, roomname, passcode):
+    def __init__(self, roomname, passcode, activated):
         self.roomname = roomname
         self.passcode = passcode
+        self.activated = activated
+
+
+class Wiki(db.Model):
+    _id = db.Column("id", db.Integer, primary_key=True)
+    title = db.Column(db.String(1000))
+    description = db.Column(db.String(100000))
+
+    def __init__(self, title, description):
+        self.title = title
+        self.description = description
 
 
 @app.route("/")
@@ -57,6 +70,7 @@ def join():
         session["nickname"] = nickname
         session["roomname"] = roomname
         session["passcode"] = passcode
+        session["is_admin"] = False
 
         if (found_room != None and found_room.passcode != passcode):
             found_room = None
@@ -83,12 +97,13 @@ def create():
 
         session["roomname"] = roomname
         session["passcode"] = passcode
+        session["is_admin"] = True
 
         if (Rooms.query.filter_by(roomname=roomname).first() != None):
             flash("Room name in use!", "info")
             return render_template("create.html")
         else:
-            room = Rooms(roomname, passcode)
+            room = Rooms(roomname, passcode, False)
             db.session.add(room)
             db.session.commit()
             return redirect(url_for("nickname", rn=roomname))
@@ -96,15 +111,22 @@ def create():
         return render_template("create.html")
 
 
-@app.route("/room/<rn>", methods=["POST", "GET"])
+@app.route("/room/<rn>", methods=["GET", "POST"])
 def room(rn):
-    waiting = True
-    userlist = Users.query.filter_by(roomname=rn).all()
-    for user in userlist:
-        flash(f"{user.nickname} just joined!", "message")
+    game_start = request.method == "POST"
+    user_list = Users.query.filter_by(roomname=rn).all()
+    room = Rooms.query.filter_by(roomname=rn).first()
+    print(session["nickname"])
 
-    while waiting:
-        return render_template("room.html")
+    for user in user_list:
+        flash(f"{user.nickname} is here!", "message")
+
+    if not game_start and not room.activated:
+        return render_template("room.html", adminbutton = session["is_admin"])
+    else:
+        room.activated = True
+        db.session.commit()
+        return redirect(url_for("game", rn=rn))
 
 
 @app.route("/nickname/<rn>", methods=["POST", "GET"])
@@ -124,10 +146,32 @@ def nickname(rn):
         return render_template("nickname.html")
 
 
+@app.route("/game/<rn>", methods=["GET", "POST"])
+def game(rn):
+    this_user_nickname = session["nickname"]
+    user_list = Users.query.filter_by(roomname=rn).all()
+    this_user = Users.query.filter_by(nickname=this_user_nickname).first()
+    this_user.activated = True
+    db.session.commit()
+    all_activated = False
+
+    while not all_activated:
+        db.session.commit()
+        all_activated = True
+
+        for user in user_list:
+            if not user.activated:
+                all_activated = False
+
+    return render_template("game.html")
+
+
+"""
 def thread(num):
     for i in range(num):
         print("running")
         sleep(1)
+"""
 
 
 def clear_db():
@@ -146,7 +190,26 @@ def clear_db():
     db.session.commit()
 
 
+"""
+def parseWiki():
+    file = open("wiki.txt", "r")
+
+    line = file.readline()
+
+    for i in range(16907):
+        line = file.readline()
+        chunks = line.split(" ||| ")
+        wiki = Wiki(chunks[0], chunks[1])
+        db.session.add(wiki)
+        db.session.commit()
+
+    print('Done!')
+    file.close()
+"""
+
+
 if __name__ == "__main__":
     db.create_all()
     clear_db()
+    #parseWiki()
     app.run(debug=True)
