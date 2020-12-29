@@ -75,7 +75,13 @@ def join():
         if (found_room != None and found_room.passcode != passcode):
             found_room = None
 
-        if (found_room != None):
+        found_user = Users.query.filter_by(nickname=nickname).first()
+
+        if found_user != None:
+            flash("Username in use!")
+            return render_template("join.html")
+
+        if found_room != None:
             session["nickname"] = nickname
             session["roomname"] = roomname
             session["passcode"] = passcode
@@ -138,7 +144,11 @@ def nickname(rn):
         nickname = request.form["nickname"]
         session["nickname"] = nickname
 
-        room = Rooms.query.filter_by(roomname=rn).first()
+        found_user = Users.query.filter_by(nickname=nickname).first()
+
+        if found_user != None:
+            flash("Username in use!")
+            return render_template("nickname.html", rn=rn)
 
         user = Users(nickname, rn, True)
         db.session.add(user)

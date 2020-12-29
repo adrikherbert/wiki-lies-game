@@ -8,6 +8,13 @@
     <body>
         <div class="position-absolute top-50 start-50 translate-middle">
             <h1>Choose a Nickname</h1>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for msg in messages %}
+                        <p style="color: red">{{msg}}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
             <form method="post">
                 <div class="mb-3">
                     <label class="form-label">Enter a Nickname</label>
