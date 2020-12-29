@@ -11,8 +11,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # TODO: 
-# IMPLEMENT GAMEPLAY:
-#### SET ROUNDS, CHOOSE PLAYER TURNS, SHOW ARTICLE INFORMATION
+# UPDATE GAMEPLAY:
+#### SET ROUNDS, IMPLEMENT A 'SHUFFLE' OR 'NEW ARTICLES' BUTTON, WAY FOR GUESSER TO PICK A USER THEY THINK IS TRUTHER
 
 
 class Users(db.Model):
@@ -125,7 +125,6 @@ def room(rn):
     game_start = request.method == "POST"
     user_list = Users.query.filter_by(roomname=rn).all()
     room = Rooms.query.filter_by(roomname=rn).first()
-    print(session["nickname"])
 
     for user in user_list:
         flash(f"{user.nickname} is here!", "message")
@@ -279,6 +278,8 @@ def parseWiki():
     for i in range(16907):
         line = file.readline()
         chunks = line.split(" ||| ")
+        if chunks[1].endswith(':'):
+            continue
         wiki = Wiki(chunks[0], chunks[1])
         db.session.add(wiki)
         db.session.commit()
