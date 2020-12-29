@@ -38,4 +38,4 @@ Lastly, here is the Liar's page. For each group of users playing in the same roo
 Thanks to Tom Scott and Matt Gray of the YouTube channel **Matt and Tom** for the project inspiration!  
 Once again, here's the link: https://www.youtube.com/channel/UCRUULstZRWS1lDvJBzHnkXA  
   
-Aaand here's the link to the Wikipedia dataset I used for this project!: https://thijs.ai/Wikipedia-Summary-Dataset/
+And here's the link to the Wikipedia dataset I used for this project!: https://thijs.ai/Wikipedia-Summary-Dataset/
