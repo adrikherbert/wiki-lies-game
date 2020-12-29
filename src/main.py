@@ -278,7 +278,7 @@ def parseWiki():
     for i in range(16907):
         line = file.readline()
         chunks = line.split(" ||| ")
-        if chunks[1].endswith(':'):
+        if chunks[1].endswith(':') or chunks[1].endswith(': '):
             continue
         wiki = Wiki(chunks[0], chunks[1])
         db.session.add(wiki)
